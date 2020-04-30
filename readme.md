@@ -9,6 +9,6 @@ I created transition matrices for every months. Using them and your description 
 
 .ipynb has a description of data processing and matrix creation.
 
-The first version of the bot gives only a general forecast, but there is also matrix for temperature prediction.
+The first version of the bot gives only a general forecast, but there is also matrix for temperature prediction(which are already implemented).
 
 
