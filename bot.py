@@ -94,7 +94,7 @@ def calculation2(now, vector, T):
 
 def send_text1(message):
     now = datetime.datetime.now()
-    weather_matrix = np.load(open("matrix1.npy","rb"))
+    weather_matrix = np.load(open("data_processing/matrices/matrix1.npy","rb"))
     if message.text.lower() == 'ясно':
         vector = np.array([1, 0, 0, 0])
         result = calculation1(now.month, vector, weather_matrix)
@@ -140,7 +140,7 @@ def send_text1(message):
 
 def send_text2(message):
     now = datetime.datetime.now()
-    temp_matrix = np.load(open("matrix2.npy","rb"))
+    temp_matrix = np.load(open("data_processing/matrices/matrix2.npy","rb"))
     if message.text.lower() == '<-5':
         vector = np.array([1, 0, 0, 0, 0])
         result = calculation2(now.month, vector, temp_matrix)
