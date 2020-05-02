@@ -3,11 +3,30 @@ Markov chain based weather forecast
 telegram_bot t.me/markov_weather_bot
 
 bot predict weather using markov chain: 
-using data from https://rp5.ru/%D0%90%D1%80%D1%85%D0%B8%D0%B2_%D0%BF%D0%BE%D0%B3%D0%BE%D0%B4%D1%8B_%D0%B2_%D0%A8%D0%B5%D1%80%D0%B5%D0%BC%D0%B5%D1%82%D1%8C%D0%B5%D0%B2%D0%BE,_%D0%B8%D0%BC._%D0%90._%D0%A1._%D0%9F%D1%83%D1%88%D0%BA%D0%B8%D0%BD%D0%B0_(%D0%B0%D1%8D%D1%80%D0%BE%D0%BF%D0%BE%D1%80%D1%82)
+
+OLD_VERSION:
+/old_data/matrix.txt data from https://rp5.ru/%D0%90%D1%80%D1%85%D0%B8%D0%B2_%D0%BF%D0%BE%D0%B3%D0%BE%D0%B4%D1%8B_%D0%B2_%D0%A8%D0%B5%D1%80%D0%B5%D0%BC%D0%B5%D1%82%D1%8C%D0%B5%D0%B2%D0%BE,_%D0%B8%D0%BC._%D0%90._%D0%A1._%D0%9F%D1%83%D1%88%D0%BA%D0%B8%D0%BD%D0%B0_(%D0%B0%D1%8D%D1%80%D0%BE%D0%BF%D0%BE%D1%80%D1%82)
+
+it has a lof of Nan values, that is why I found new data.
+
+
+NEW_VERSION:
+data based on http://api.worldweatheronline.com/premium/v1/past-weather.ashx
+
+it's API for worldweatheronline.com(to use them you will need a premium account (60 days trial period))
+
 
 I created transition matrices for every months. Using them and your description of the today's weather, bot predict weather for tomorrow.
 
-.ipynb has a description of data processing and matrix creation.
+general_forecast.ipynb has a description of data processing and matrices creation using rp5.ru
+
+new_data.ipynb - receiving data from worldweatheronline.com using the API
+
+OnlineWeatherMatrix.ipynb - data processing and matrices creation using data created by new_data.ipynb
+
+matrix1.npy - matrices for general prediction created by OnlineWeatherMatrix.ipynb
+
+matrix2.npy - matrices for temperature prediction created by OnlineWeatherMatrix.ipynb
 
 The first version of the bot gives only a general forecast, but there is also matrix for temperature prediction(which are already implemented).
 
