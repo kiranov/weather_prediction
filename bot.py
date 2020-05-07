@@ -5,6 +5,8 @@ import requests
 import csv
 import collections
 import pandas as pd
+from functools import cmp_to_key
+from sklearn.externals import joblib
 
 
 # t.me/markov_weather_bot
@@ -30,11 +32,14 @@ keyboard1.row('Облачно, дождь', 'Облачно, снег', 'Мок�
 keyboard2 = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True)
 keyboard2.row('<-5', '[-5; -2)', '[-2; 2]', '(2; 5]', '>5')
 
+keyboard3 = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True)
+keyboard3.row('ML', 'MarkovChain')
+
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
     bot.send_message(message.chat.id,
-                     'Привет, я умею делать общий прогноз погоды и предсказывать температуру. Какой прогноз Вы бы хотели получить?',
+                     'Привет, я умею делать общий прогноз погоды и предсказывать температуру в городе Долгопрудном. Какой прогноз Вы бы хотели получить?',
                      reply_markup=keyboard0)
 
 
@@ -96,23 +101,74 @@ def calculation2(now, vector, T):
     return result
 
 
+def my_cmp(a, b):
+    return b[0] - a[0]
+
+
+def translation1(vector):
+    maximum = max(vector)
+    res1 = []
+    res2 = []
+    vector = vector / maximum
+    support = [(vector[i], int(i)) for i in range(len(vector))]
+    support = sorted(support, key=cmp_to_key(my_cmp))
+    names = list1[:4]
+    i = 0
+    while i < len(vector):
+        if support[i][0] > 0.8:
+            res1.append(names[support[i][1]])
+        elif support[i][0] > 0.5:
+            res2.append(names[support[i][1]])
+        i += 1
+    return res1, res2
+
+
+def translation2(vector):
+    maximum = max(vector)
+    res1 = []
+    res2 = []
+    vector = vector / maximum
+    support = [(vector[i], int(i)) for i in range(len(vector))]
+    support = sorted(support, key=cmp_to_key(my_cmp))
+    names = list2[:5]
+    i = 0
+    if names[support[0][1]] == list2[0]:
+        return (-5, 0)
+    elif names[support[0][1]] == list2[1]:
+        return (-5, -2)
+    elif names[support[0][1]] == list2[2]:
+        return (-2, 2)
+    elif names[support[0][1]] == list2[3]:
+        return (2, 5)
+    elif names[support[0][1]] == list2[4]:
+        return (5, 0)
+    '''while i < len(vector):
+        if support[i][0] > 0.9:
+            res1.append(names[support[i][1]])
+        elif support[i][0] > 0.5:
+            res2.append(names[support[i][1]])
+        i += 1
+    #return res1, res2
+    '''
+
+
 def preprocessing(data):
     processing_data = data
     for i in processing_data:
-        if i[2] in {'Thundery outbreaks possible','Moderate rain',
-                    'Light drizzle','Light freezing rain','Moderate or heavy rain shower',
-                    'Patchy rain possible','Light rain shower','Patchy light drizzle',
-                    'Light rain','Moderate or heavy rain with thunder',
-                    'Moderate rain at times', 'Heavy rain','Patchy light rain',
+        if i[2] in {'Thundery outbreaks possible', 'Moderate rain',
+                    'Light drizzle', 'Light freezing rain', 'Moderate or heavy rain shower',
+                    'Patchy rain possible', 'Light rain shower', 'Patchy light drizzle',
+                    'Light rain', 'Moderate or heavy rain with thunder',
+                    'Moderate rain at times', 'Heavy rain', 'Patchy light rain',
                     'Patchy light rain with thunder'}:
             i[2] = 2
-        elif i[2] in {'Light snow','Patchy moderate snow','Heavy freezing drizzle',
+        elif i[2] in {'Light snow', 'Patchy moderate snow', 'Heavy freezing drizzle',
                       'Moderate snow', 'Heavy snow', 'Light snow showers',
                       'Moderate or heavy sleet', 'Moderate or heavy snow showers',
-                      'Light sleet','Light sleet showers','Patchy snow possible',
-                      'Blizzard','Patchy heavy snow','Patchy light snow'}:
+                      'Light sleet', 'Light sleet showers', 'Patchy snow possible',
+                      'Blizzard', 'Patchy heavy snow', 'Patchy light snow'}:
             i[2] = 3
-        elif i[2] in {'Fog','Overcast','Freezing fog','Mist','Partly cloudy'}:
+        elif i[2] in {'Fog', 'Overcast', 'Freezing fog', 'Mist', 'Partly cloudy'}:
             i[2] = 1
         else:
             i[2] = 0
@@ -179,18 +235,35 @@ def get_weather(now):
     return day
 
 
+def names(str1, str2):
+    name1 = ''
+    name2 = ''
+    i = 0
+    while i < len(str1) - 1:
+        name1 += str1[i].lower() + ', '
+        i += 1
+    name1 += str1[i].lower()
+    i = 0
+    if len(str2) >= 1:
+        while i < len(str2) - 1:
+            name2 += str2[i].lower() + ', '
+            i += 1
+        name2 += str2[i].lower()
+    return name1, name2
+
+
 def send_text1(message):
     now = datetime.datetime.now()
     predict = get_weather(now).T[2]
     vector1 = np.zeros(4)
     vector2 = np.zeros(4)
     for i in predict[8:12]:
-        vector1[i]+=1
-    vector1 =  vector1 / 4
+        vector1[i] += 1
+    vector1 = vector1 / 4
     for i in predict[12:]:
-        vector2[i]+=1
-    vector2 =  vector2 / 4
-    weather_matrix = np.load(open("data_processing/matrices/matrix1.npy","rb"))
+        vector2[i] += 1
+    vector2 = vector2 / 4
+    weather_matrix = np.load(open("data_processing/matrices/matrix1.npy", "rb"))
     '''
     if message.text.lower() == 'ясно':
         vector = np.array([1, 0, 0, 0])
@@ -234,8 +307,18 @@ def send_text1(message):
         bot.send_message(message.chat.id, str(result))'''
     result1 = calculation1(now.month, vector1, weather_matrix)
     result2 = calculation1(now.month, vector2, weather_matrix)
-    bot.send_message(message.chat.id, str(result1) + 'night')
-    bot.send_message(message.chat.id, str(result2) + 'day')
+    night1, night2 = translation1(result1)
+    day1, day2 = translation1(result2)
+    name_n1, name_n2 = names(night1, night2)
+    name_d1, name_d2 = names(day1, day2)
+    if len(night2) > 0:
+        bot.send_message(message.chat.id, 'Ночью будет ' + name_n1 + ', возможно ' + name_n2 + ".")
+    else:
+        bot.send_message(message.chat.id, 'Ночью будет ' + name_n1 + ".")
+    if len(day2) > 0:
+        bot.send_message(message.chat.id, 'Днем будет ' + name_d1 + ', возможно ' + name_d2 + ".")
+    else:
+        bot.send_message(message.chat.id, 'Днем будет ' + name_d1 + ".")
     bot.send_message(message.chat.id, 'Для получения нового прогноза введите /start')
 
 
@@ -271,8 +354,7 @@ def temp_diff(data):
 def send_text2(message):
     now = datetime.datetime.now()
     result_t1, result_t2, t1, t2 = temp_diff(get_weather(now).T[1])
-    temp_matrix = np.load(open("data_processing/matrices/matrix2.npy","rb"))
-    
+    temp_matrix = np.load(open("data_processing/matrices/matrix2.npy", "rb"))
     '''
     if message.text.lower() == '<-5':
         vector = np.array([1, 0, 0, 0, 0])
@@ -297,20 +379,44 @@ def send_text2(message):
     '''
     result1 = calculation2(now.month, result_t1, temp_matrix)
     result2 = calculation2(now.month, result_t2, temp_matrix)
-    bot.send_message(message.chat.id, str(t1) + ' ' + str(result1) + '- night')
-    bot.send_message(message.chat.id, str(t2) + ' ' + str(result2) + '- day')
+    (night1, night2) = translation2(result1)
+    (day1, day2) = translation2(result2)
+    if night2 == 0:
+        if night1 > 0:
+            bot.send_message(message.chat.id, 'Наиболее вероятно, что ночью температура поднимется выше ' + str(t1 + night1) + ' градусов.')
+        else:
+            bot.send_message(message.chat.id, 'Наиболее вероятно, что ночью температура опустится ниже ' + str(t1 + night2) + ' градусов.')
+    else:
+        bot.send_message(message.chat.id, 'Наиболее вероятно, что ночью температура будет в пределах от ' + str(t1 + night1) + ' до ' + str(t1 + night2) + ' градусов.')
+    if day2 == 0:
+        if day1 > 0:
+            bot.send_message(message.chat.id, 'Наиболее вероятно, что днем температура поднимется выше ' + str(t2 + day1) + ' градусов.')
+        else:
+            bot.send_message(message.chat.id, 'Наиболее вероятно, что днем температура опустится ниже ' + str(t2 + day1) + ' градусов.')
+    else:
+        bot.send_message(message.chat.id, 'Наиболее вероятно, что днем температура будет в пределах от ' + str(t2 + day1) + ' до ' + str(t2 + day2) + ' градусов.')
+    bot.send_message(message.chat.id, 'Для получения нового прогноза введите /start')
+
+
+def ML_predict(message):
+    now = datetime.datetime.now()
+    _joblib = joblib.load('method.pkl')
+    res = round(float(_joblib.predict([[now.day, now.month, now.year]])), 1)
+    bot.send_message(message.chat.id, 'Наиболее вероятно, что завтра температура будет около ' + str(res) + ' градусов.')
     bot.send_message(message.chat.id, 'Для получения нового прогноза введите /start')
 
 
 @bot.message_handler(content_types=['text'])
 def type_predction(message):
     if message.text.lower() == 'общий прогноз':
-        #bot.send_message(message.chat.id, 'Чтобы узнать погоду в Долгопрудном на завтра, мне нужно знать сегодняшнюю. Для ее описания выберете наиболее подходящий вариант',
+        # bot.send_message(message.chat.id, 'Чтобы узнать погоду в Долгопрудном на завтра, мне нужно знать сегодняшнюю. Для ее описания выберете наиболее подходящий вариант',
         #                 reply_markup=keyboard1)
         send_text1(message)
     elif message.text.lower() == 'прогнозирование температуры':
-        #bot.send_message(message.chat.id, 'Чтобы узнать погоду в Долгопрудном на завтра, мне нужно знать сегодняшнюю. Для ее описания выберете наиболее подходящий вариант',
-        #                 reply_markup=keyboard2)
+        bot.send_message(message.chat.id, 'Выберете способ предсказания:', reply_markup=keyboard3)
+    elif message.text.lower() == 'ml':
+        ML_predict(message)
+    elif message.text.lower() == 'markovchain':
         send_text2(message)
     elif message.text in list1:
         send_text1(message)
