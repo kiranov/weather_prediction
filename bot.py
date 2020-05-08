@@ -312,11 +312,11 @@ def send_text1(message):
     name_n1, name_n2 = names(night1, night2)
     name_d1, name_d2 = names(day1, day2)
     if len(night2) > 0:
-        bot.send_message(message.chat.id, 'Ночью будет ' + name_n1 + ', возможно ' + name_n2 + ".")
+        bot.send_message(message.chat.id, 'Ночью будет ' + name_n1 + ', временами ' + name_n2 + ".")
     else:
         bot.send_message(message.chat.id, 'Ночью будет ' + name_n1 + ".")
     if len(day2) > 0:
-        bot.send_message(message.chat.id, 'Днем будет ' + name_d1 + ', возможно ' + name_d2 + ".")
+        bot.send_message(message.chat.id, 'Днем будет ' + name_d1 + ', временами ' + name_d2 + ".")
     else:
         bot.send_message(message.chat.id, 'Днем будет ' + name_d1 + ".")
     bot.send_message(message.chat.id, 'Для получения нового прогноза введите /start')
